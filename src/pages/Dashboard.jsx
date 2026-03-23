@@ -30,16 +30,16 @@ const Dashboard = () => {
     try {
       const [productsRes, customersRes, ordersRes, inventoryRes] =
         await Promise.all([
-          API.get('/products'),
-          API.get('/customers'),
-          API.get('/orders'),
-          API.get('/inventory'),
+          API.get('/products?limit=100'),
+          API.get('/customers?limit=100'),
+          API.get('/orders?limit=100'),
+          API.get('/inventory?limit=100'),
         ]);
 
-      const products = productsRes.data;
-      const customers = customersRes.data;
-      const orders = ordersRes.data;
-      const inventory = inventoryRes.data;
+      const products = productsRes.data.data || productsRes.data;
+      const customers = customersRes.data.data || customersRes.data;
+      const orders = ordersRes.data.data || ordersRes.data;
+      const inventory = inventoryRes.data.data || inventoryRes.data;
 
       // Count orders grouped by their status
       const ordersByStatus = orders.reduce((acc, order) => {

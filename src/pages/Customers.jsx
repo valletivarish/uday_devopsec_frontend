@@ -41,8 +41,8 @@ const Customers = () => {
   /** Fetch all customers from the API */
   const fetchCustomers = async () => {
     try {
-      const res = await API.get('/customers');
-      setCustomers(res.data);
+      const res = await API.get('/customers?limit=100');
+      setCustomers(res.data.data || res.data);
     } catch (err) {
       toast.error('Failed to load customers');
     } finally {

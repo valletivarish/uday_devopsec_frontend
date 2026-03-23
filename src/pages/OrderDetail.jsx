@@ -36,7 +36,7 @@ const OrderDetail = () => {
   const fetchOrder = async () => {
     try {
       const res = await API.get(`/orders/${id}`);
-      setOrder(res.data);
+      setOrder(res.data.data || res.data);
     } catch (err) {
       toast.error('Failed to load order details');
       navigate('/orders');

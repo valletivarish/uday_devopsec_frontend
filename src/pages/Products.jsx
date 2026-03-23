@@ -47,8 +47,8 @@ const Products = () => {
   /** Fetch all products from the API */
   const fetchProducts = async () => {
     try {
-      const res = await API.get('/products');
-      setProducts(res.data);
+      const res = await API.get('/products?limit=100');
+      setProducts(res.data.data || res.data);
     } catch (err) {
       toast.error('Failed to load products');
     } finally {

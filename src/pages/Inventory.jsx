@@ -43,11 +43,11 @@ const Inventory = () => {
   const fetchData = async () => {
     try {
       const [invRes, prodRes] = await Promise.all([
-        API.get('/inventory'),
-        API.get('/products'),
+        API.get('/inventory?limit=100'),
+        API.get('/products?limit=100'),
       ]);
-      setInventory(invRes.data);
-      setProducts(prodRes.data);
+      setInventory(invRes.data.data || invRes.data);
+      setProducts(prodRes.data.data || prodRes.data);
     } catch (err) {
       toast.error('Failed to load inventory data');
     } finally {

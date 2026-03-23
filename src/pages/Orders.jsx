@@ -46,13 +46,13 @@ const Orders = () => {
   const fetchData = async () => {
     try {
       const [ordersRes, customersRes, productsRes] = await Promise.all([
-        API.get('/orders'),
-        API.get('/customers'),
-        API.get('/products'),
+        API.get('/orders?limit=100'),
+        API.get('/customers?limit=100'),
+        API.get('/products?limit=100'),
       ]);
-      setOrders(ordersRes.data);
-      setCustomers(customersRes.data);
-      setProducts(productsRes.data);
+      setOrders(ordersRes.data.data || ordersRes.data);
+      setCustomers(customersRes.data.data || customersRes.data);
+      setProducts(productsRes.data.data || productsRes.data);
     } catch (err) {
       toast.error('Failed to load data');
     } finally {
