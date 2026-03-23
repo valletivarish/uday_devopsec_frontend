@@ -95,7 +95,7 @@ const Orders = () => {
   const calculateTotal = () => {
     return orderItems.reduce((total, item) => {
       const product = products.find(
-        (p) => (p._id || p.id) === item.productId
+        (p) => String(p._id || p.id) === String(item.productId)
       );
       return total + (product ? product.price * item.quantity : 0);
     }, 0);
@@ -114,9 +114,9 @@ const Orders = () => {
 
     try {
       const payload = {
-        customerId: selectedCustomer,
+        customerId: parseInt(selectedCustomer, 10),
         items: validItems.map((item) => ({
-          productId: item.productId,
+          productId: parseInt(item.productId, 10),
           quantity: parseInt(item.quantity, 10),
         })),
       };
