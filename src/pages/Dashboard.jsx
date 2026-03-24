@@ -5,10 +5,19 @@
  */
 import { useState, useEffect } from 'react';
 import API from '../api/axios';
-import { FiBox, FiUsers, FiShoppingCart, FiAlertTriangle } from 'react-icons/fi';
+import { FiBox, FiUsers, FiShoppingCart, FiAlertTriangle, FiShield } from 'react-icons/fi';
 import StatusBadge from '../components/common/StatusBadge';
+import { useAuth } from '../hooks/useAuth';
+
+const roleInfo = {
+  admin: { label: 'Admin', desc: 'Full access — create, read, update, delete', color: 'bg-red-100 text-red-700 border-red-200' },
+  manager: { label: 'Manager', desc: 'Create, read, update — no delete', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  viewer: { label: 'Viewer', desc: 'Read-only access across all modules', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+};
 
 const Dashboard = () => {
+  const { user, role } = useAuth();
+  const currentRole = roleInfo[role] || roleInfo.viewer;
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalCustomers: 0,
@@ -108,8 +117,14 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page heading */}
-      <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+      {/* Page heading with role badge */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium ${currentRole.color}`}>
+          <FiShield size={14} />
+          {currentRole.label} — {currentRole.desc}
+        </div>
+      </div>
 
       {/* Main stats cards row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
