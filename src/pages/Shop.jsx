@@ -5,17 +5,17 @@
 import { useState, useEffect } from 'react';
 import API from '../api/axios';
 import { toast } from 'react-toastify';
-import { FiSearch, FiShoppingCart, FiBox, FiTag } from 'react-icons/fi';
+import { FiSearch, FiShoppingCart, FiPackage, FiStar, FiCheck } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 
-const categoryIcons = {
-  ELECTRONICS: '💻',
-  CLOTHING: '👕',
-  FOOD: '🍵',
-  BOOKS: '📚',
-  HOME: '🏠',
-  SPORTS: '⚽',
-  OTHER: '📦',
+const categoryColors = {
+  ELECTRONICS: 'from-blue-600 to-indigo-700',
+  CLOTHING: 'from-pink-600 to-rose-700',
+  FOOD: 'from-orange-500 to-amber-600',
+  BOOKS: 'from-violet-600 to-purple-700',
+  HOME: 'from-cyan-600 to-teal-700',
+  SPORTS: 'from-green-600 to-emerald-700',
+  OTHER: 'from-slate-600 to-slate-700',
 };
 
 const Shop = () => {
@@ -23,6 +23,7 @@ const Shop = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('ALL');
   const [loading, setLoading] = useState(true);
+  const [addedIds, setAddedIds] = useState(new Set());
   const { addToCart, items } = useCart();
 
   useEffect(() => {
@@ -57,7 +58,15 @@ const Shop = () => {
 
   const handleAdd = (product) => {
     addToCart(product);
-    toast.success(`${product.name} added to cart`);
+    const pid = product.id || product._id;
+    setAddedIds((prev) => new Set(prev).add(pid));
+    setTimeout(() => {
+      setAddedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(pid);
+        return next;
+      });
+    }, 1200);
   };
 
   if (loading) {
@@ -70,8 +79,22 @@ const Shop = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-2xl font-bold text-slate-800">Shop</h1>
+      {/* Hero section */}
+      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-2xl p-6 md:p-8 text-white">
+        <h1 className="text-3xl font-bold mb-2">Welcome to OPM Store</h1>
+        <p className="text-emerald-200/70 text-sm max-w-xl">
+          Browse our catalog and add items to your cart. Free shipping on orders over $500.
+        </p>
+        <div className="flex items-center gap-4 mt-4">
+          <div className="flex items-center gap-2 text-sm text-emerald-300/80">
+            <FiPackage size={16} />
+            <span>{products.length} Products</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-emerald-300/80">
+            <FiStar size={16} />
+            <span>{categories.length - 1} Categories</span>
+          </div>
+        </div>
       </div>
 
       {/* Search + Category filter */}
@@ -83,65 +106,86 @@ const Shop = () => {
             placeholder="Search products..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm bg-white"
           />
         </div>
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm bg-white"
-        >
+        <div className="flex gap-2 flex-wrap">
           {categories.map((c) => (
-            <option key={c} value={c}>{c === 'ALL' ? 'All Categories' : c}</option>
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                category === c
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:border-emerald-300'
+              }`}
+            >
+              {c === 'ALL' ? 'All' : c}
+            </button>
           ))}
-        </select>
+        </div>
       </div>
 
       {/* Product cards grid */}
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-slate-400">
-          <FiBox size={48} className="mx-auto mb-3 opacity-50" />
+          <FiPackage size={48} className="mx-auto mb-3 opacity-50" />
           <p>No products found</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {filtered.map((product) => {
-            const qty = getCartQty(product.id || product._id);
+            const pid = product.id || product._id;
+            const qty = getCartQty(pid);
+            const justAdded = addedIds.has(pid);
+            const gradient = categoryColors[product.category] || categoryColors.OTHER;
+
             return (
               <div
-                key={product.id || product._id}
-                className="bg-white rounded-xl shadow-sm border border-emerald-100 overflow-hidden hover:shadow-md transition-shadow group"
+                key={pid}
+                className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-emerald-200 transition-all duration-200 flex flex-col"
               >
-                {/* Category banner */}
-                <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3 flex items-center justify-between">
-                  <span className="text-white text-sm font-medium flex items-center gap-1.5">
-                    <span className="text-base">{categoryIcons[product.category] || '📦'}</span>
-                    {product.category}
-                  </span>
-                  <span className="text-white/80 text-xs font-mono">{product.sku}</span>
+                {/* Product visual header */}
+                <div className={`bg-gradient-to-br ${gradient} p-6 flex items-center justify-center`}>
+                  <FiPackage size={40} className="text-white/80" />
                 </div>
 
                 {/* Product info */}
-                <div className="p-4 space-y-3">
-                  <h3 className="font-semibold text-slate-800 text-lg leading-tight group-hover:text-emerald-700 transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm text-slate-500 line-clamp-2">{product.description}</p>
+                <div className="p-4 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h3 className="font-semibold text-slate-800 leading-tight">{product.name}</h3>
+                  </div>
+                  <span className="inline-block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                    {product.category} | {product.sku}
+                  </span>
+                  <p className="text-xs text-slate-500 mb-4 flex-1 line-clamp-2">{product.description}</p>
 
-                  <div className="flex items-end justify-between pt-2">
+                  <div className="flex items-end justify-between mt-auto">
                     <div>
-                      <p className="text-xs text-slate-400 uppercase tracking-wider">Price</p>
-                      <p className="text-2xl font-bold text-emerald-600">${Number(product.price).toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-slate-800">${Number(product.price).toFixed(2)}</p>
                     </div>
 
                     <button
                       onClick={() => handleAdd(product)}
-                      className="relative inline-flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-colors text-sm font-medium"
+                      className={`relative inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                        justAdded
+                          ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                          : 'bg-slate-900 text-white hover:bg-emerald-700'
+                      }`}
                     >
-                      <FiShoppingCart size={16} />
-                      Add
-                      {qty > 0 && (
-                        <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {justAdded ? (
+                        <>
+                          <FiCheck size={16} />
+                          Added
+                        </>
+                      ) : (
+                        <>
+                          <FiShoppingCart size={16} />
+                          Add
+                        </>
+                      )}
+                      {qty > 0 && !justAdded && (
+                        <span className="absolute -top-2 -right-2 w-5 h-5 bg-emerald-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                           {qty}
                         </span>
                       )}

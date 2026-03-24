@@ -15,16 +15,14 @@ import {
   FiXCircle,
 } from 'react-icons/fi';
 import StatusBadge from '../components/common/StatusBadge';
+import { useAuth } from '../hooks/useAuth';
 
-/**
- * Ordered list of statuses used to render the status timeline.
- * Each status maps to a step in the order lifecycle.
- */
 const STATUS_FLOW = ['PLACED', 'PAID', 'SHIPPED', 'DELIVERED'];
 
 const OrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isViewer } = useAuth();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -80,7 +78,7 @@ const OrderDetail = () => {
       {/* Back button and page header */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate('/orders')}
+          onClick={() => navigate(isViewer ? '/my-orders' : '/orders')}
           className="p-2 rounded-lg hover:bg-slate-200 text-slate-600"
         >
           <FiArrowLeft size={20} />
@@ -283,8 +281,8 @@ const OrderDetail = () => {
             </div>
           )}
 
-          {/* Action buttons card - only show when order is not completed or cancelled */}
-          {!isCancelled && order.status !== 'DELIVERED' && (
+          {/* Action buttons card - only for admin/manager, not viewer */}
+          {!isViewer && !isCancelled && order.status !== 'DELIVERED' && (
             <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-5">
               <h2 className="text-lg font-semibold text-slate-800 mb-4">
                 Actions
