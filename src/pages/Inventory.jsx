@@ -36,6 +36,7 @@ const Inventory = () => {
     quantityInStock: '',
     warehouseLocation: '',
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     fetchData();
@@ -66,10 +67,19 @@ const Inventory = () => {
       (item.warehouseLocation || '').toLowerCase().includes(search.toLowerCase())
   );
 
+  /** Validate inventory form */
+  const validateForm = () => {
+    const errs = {};
+    if (!form.productId) errs.productId = 'Product is required';
+    if (form.quantityInStock === '' || parseInt(form.quantityInStock, 10) < 0) errs.quantityInStock = 'Quantity must be 0 or more';
+    return errs;
+  };
+
   /** Open modal for adding a new inventory record */
   const handleCreate = () => {
     setEditing(null);
     setForm({ productId: '', quantityInStock: '', warehouseLocation: '' });
+    setErrors({});
     setModalOpen(true);
   };
 
@@ -81,12 +91,19 @@ const Inventory = () => {
       quantityInStock: item.quantityInStock || '',
       warehouseLocation: item.warehouseLocation || '',
     });
+    setErrors({});
     setModalOpen(true);
   };
 
   /** Submit create or update form */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errs = validateForm();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+    setErrors({});
     try {
       const payload = {
         productId: form.productId,
@@ -239,16 +256,15 @@ const Inventory = () => {
         onClose={() => setModalOpen(false)}
         title={editing ? 'Update Inventory' : 'Add Inventory Record'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Product *
             </label>
             <select
-              required
               value={form.productId}
-              onChange={(e) => setForm({ ...form, productId: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              onChange={(e) => { setForm({ ...form, productId: e.target.value }); setErrors({ ...errors, productId: undefined }); }}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.productId ? 'border-red-400' : 'border-slate-200'}`}
               disabled={!!editing}
             >
               <option value="">Select a product</option>
@@ -258,6 +274,7 @@ const Inventory = () => {
                 </option>
               ))}
             </select>
+            {errors.productId && <p className="text-red-500 text-xs mt-1">{errors.productId}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -266,12 +283,12 @@ const Inventory = () => {
             <input
               type="number"
               min="0"
-              required
               value={form.quantityInStock}
-              onChange={(e) => setForm({ ...form, quantityInStock: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              onChange={(e) => { setForm({ ...form, quantityInStock: e.target.value }); setErrors({ ...errors, quantityInStock: undefined }); }}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.quantityInStock ? 'border-red-400' : 'border-slate-200'}`}
               placeholder={editing ? 'Enter new stock quantity' : 'Enter quantity'}
             />
+            {errors.quantityInStock && <p className="text-red-500 text-xs mt-1">{errors.quantityInStock}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">

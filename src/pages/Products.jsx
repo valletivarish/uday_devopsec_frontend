@@ -39,8 +39,8 @@ const Products = () => {
     description: '',
     price: '',
     category: '',
-    sku: '',
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     fetchProducts();
@@ -66,10 +66,31 @@ const Products = () => {
       p.sku?.toLowerCase().includes(search.toLowerCase())
   );
 
+  /** Generate a SKU from category prefix + timestamp */
+  const generateSku = (category) => {
+    const prefixes = {
+      ELECTRONICS: 'ELEC', CLOTHING: 'CLO', FOOD: 'FOOD',
+      BOOKS: 'BOOK', HOME: 'HOME', SPORTS: 'SPT', OTHER: 'OTH',
+    };
+    const prefix = prefixes[category] || 'GEN';
+    const suffix = Date.now().toString(36).toUpperCase().slice(-5);
+    return `${prefix}-${suffix}`;
+  };
+
+  /** Validate form fields and return error map */
+  const validateForm = () => {
+    const errs = {};
+    if (!form.name.trim() || form.name.trim().length < 3) errs.name = 'Name is required (min 3 characters)';
+    if (!form.category) errs.category = 'Category is required';
+    if (!form.price || parseFloat(form.price) <= 0) errs.price = 'Price must be greater than 0';
+    return errs;
+  };
+
   /** Open the modal for creating a new product */
   const handleCreate = () => {
     setEditing(null);
-    setForm({ name: '', description: '', price: '', category: '', sku: '' });
+    setForm({ name: '', description: '', price: '', category: '' });
+    setErrors({});
     setModalOpen(true);
   };
 
@@ -81,16 +102,26 @@ const Products = () => {
       description: product.description || '',
       price: product.price || '',
       category: product.category || '',
-      sku: product.sku || '',
     });
+    setErrors({});
     setModalOpen(true);
   };
 
   /** Submit the form to create or update a product */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errs = validateForm();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+    setErrors({});
     try {
-      const payload = { ...form, price: parseFloat(form.price) };
+      const payload = {
+        ...form,
+        price: parseFloat(form.price),
+        sku: editing?.sku || generateSku(form.category),
+      };
       if (editing) {
         await API.put(`/products/${editing._id || editing.id}`, payload);
         toast.success('Product updated successfully');
@@ -202,38 +233,28 @@ const Products = () => {
         onClose={() => setModalOpen(false)}
         title={editing ? 'Edit Product' : 'Create Product'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Name *
             </label>
             <input
               type="text"
-              required
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              onChange={(e) => { setForm({ ...form, name: e.target.value }); setErrors({ ...errors, name: undefined }); }}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.name ? 'border-red-400' : 'border-slate-200'}`}
+              placeholder="Enter product name"
             />
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              SKU
-            </label>
-            <input
-              type="text"
-              value={form.sku}
-              onChange={(e) => setForm({ ...form, sku: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Category
+              Category *
             </label>
             <select
               value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              onChange={(e) => { setForm({ ...form, category: e.target.value }); setErrors({ ...errors, category: undefined }); }}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.category ? 'border-red-400' : 'border-slate-200'}`}
             >
               <option value="">Select a category</option>
               {CATEGORY_OPTIONS.map((cat) => (
@@ -242,6 +263,7 @@ const Products = () => {
                 </option>
               ))}
             </select>
+            {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -250,11 +272,12 @@ const Products = () => {
             <input
               type="number"
               step="0.01"
-              required
               value={form.price}
-              onChange={(e) => setForm({ ...form, price: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              onChange={(e) => { setForm({ ...form, price: e.target.value }); setErrors({ ...errors, price: undefined }); }}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.price ? 'border-red-400' : 'border-slate-200'}`}
+              placeholder="0.00"
             />
+            {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -265,6 +288,7 @@ const Products = () => {
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              placeholder="Optional product description"
             />
           </div>
           <div className="flex justify-end gap-3 pt-2">

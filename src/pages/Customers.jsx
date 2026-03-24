@@ -35,6 +35,7 @@ const Customers = () => {
     shippingPostcode: '',
     shippingCountry: '',
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     fetchCustomers();
@@ -61,6 +62,21 @@ const Customers = () => {
       c.phone?.includes(search)
   );
 
+  /** Validate customer form */
+  const validateForm = () => {
+    const errs = {};
+    if (!form.firstName.trim()) errs.firstName = 'First name is required';
+    if (!form.lastName.trim()) errs.lastName = 'Last name is required';
+    if (!form.email.trim()) errs.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Enter a valid email address';
+    if (!form.shippingStreet.trim()) errs.shippingStreet = 'Street address is required';
+    if (!form.shippingCity.trim()) errs.shippingCity = 'City is required';
+    if (!form.shippingState.trim()) errs.shippingState = 'State is required';
+    if (!form.shippingPostcode.trim()) errs.shippingPostcode = 'Postcode is required';
+    if (!form.shippingCountry.trim()) errs.shippingCountry = 'Country is required';
+    return errs;
+  };
+
   /** Open modal for creating a new customer */
   const handleCreate = () => {
     setEditing(null);
@@ -75,6 +91,7 @@ const Customers = () => {
       shippingPostcode: '',
       shippingCountry: '',
     });
+    setErrors({});
     setModalOpen(true);
   };
 
@@ -92,12 +109,19 @@ const Customers = () => {
       shippingPostcode: customer.shippingPostcode || '',
       shippingCountry: customer.shippingCountry || '',
     });
+    setErrors({});
     setModalOpen(true);
   };
 
   /** Submit create or update form */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errs = validateForm();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+    setErrors({});
     try {
       if (editing) {
         await API.put(`/customers/${editing._id || editing.id}`, form);
@@ -220,7 +244,7 @@ const Customers = () => {
         onClose={() => setModalOpen(false)}
         title={editing ? 'Edit Customer' : 'Create Customer'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -228,11 +252,12 @@ const Customers = () => {
               </label>
               <input
                 type="text"
-                required
                 value={form.firstName}
-                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                onChange={(e) => { setForm({ ...form, firstName: e.target.value }); setErrors({ ...errors, firstName: undefined }); }}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.firstName ? 'border-red-400' : 'border-slate-200'}`}
+                placeholder="Enter first name"
               />
+              {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -240,11 +265,12 @@ const Customers = () => {
               </label>
               <input
                 type="text"
-                required
                 value={form.lastName}
-                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                onChange={(e) => { setForm({ ...form, lastName: e.target.value }); setErrors({ ...errors, lastName: undefined }); }}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.lastName ? 'border-red-400' : 'border-slate-200'}`}
+                placeholder="Enter last name"
               />
+              {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
             </div>
           </div>
           <div>
@@ -253,11 +279,12 @@ const Customers = () => {
             </label>
             <input
               type="email"
-              required
               value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              onChange={(e) => { setForm({ ...form, email: e.target.value }); setErrors({ ...errors, email: undefined }); }}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.email ? 'border-red-400' : 'border-slate-200'}`}
+              placeholder="you@example.com"
             />
+            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -268,65 +295,76 @@ const Customers = () => {
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              placeholder="Optional"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Street Address
+              Street Address *
             </label>
             <input
               type="text"
               value={form.shippingStreet}
-              onChange={(e) => setForm({ ...form, shippingStreet: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              onChange={(e) => { setForm({ ...form, shippingStreet: e.target.value }); setErrors({ ...errors, shippingStreet: undefined }); }}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.shippingStreet ? 'border-red-400' : 'border-slate-200'}`}
+              placeholder="Enter street address"
             />
+            {errors.shippingStreet && <p className="text-red-500 text-xs mt-1">{errors.shippingStreet}</p>}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                City
+                City *
               </label>
               <input
                 type="text"
                 value={form.shippingCity}
-                onChange={(e) => setForm({ ...form, shippingCity: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                onChange={(e) => { setForm({ ...form, shippingCity: e.target.value }); setErrors({ ...errors, shippingCity: undefined }); }}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.shippingCity ? 'border-red-400' : 'border-slate-200'}`}
+                placeholder="Enter city"
               />
+              {errors.shippingCity && <p className="text-red-500 text-xs mt-1">{errors.shippingCity}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                State
+                State *
               </label>
               <input
                 type="text"
                 value={form.shippingState}
-                onChange={(e) => setForm({ ...form, shippingState: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                onChange={(e) => { setForm({ ...form, shippingState: e.target.value }); setErrors({ ...errors, shippingState: undefined }); }}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.shippingState ? 'border-red-400' : 'border-slate-200'}`}
+                placeholder="Enter state"
               />
+              {errors.shippingState && <p className="text-red-500 text-xs mt-1">{errors.shippingState}</p>}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Postcode
+                Postcode *
               </label>
               <input
                 type="text"
                 value={form.shippingPostcode}
-                onChange={(e) => setForm({ ...form, shippingPostcode: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                onChange={(e) => { setForm({ ...form, shippingPostcode: e.target.value }); setErrors({ ...errors, shippingPostcode: undefined }); }}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.shippingPostcode ? 'border-red-400' : 'border-slate-200'}`}
+                placeholder="Enter postcode"
               />
+              {errors.shippingPostcode && <p className="text-red-500 text-xs mt-1">{errors.shippingPostcode}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Country
+                Country *
               </label>
               <input
                 type="text"
                 value={form.shippingCountry}
-                onChange={(e) => setForm({ ...form, shippingCountry: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                onChange={(e) => { setForm({ ...form, shippingCountry: e.target.value }); setErrors({ ...errors, shippingCountry: undefined }); }}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm ${errors.shippingCountry ? 'border-red-400' : 'border-slate-200'}`}
+                placeholder="Enter country"
               />
+              {errors.shippingCountry && <p className="text-red-500 text-xs mt-1">{errors.shippingCountry}</p>}
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-2">
