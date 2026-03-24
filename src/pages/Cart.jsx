@@ -48,7 +48,12 @@ const Cart = () => {
       toast.success('Order placed successfully!');
       navigate('/my-orders');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to place order');
+      const raw = err.response?.data?.message || 'Failed to place order';
+      // Show a clean, short message in the toast
+      const clean = raw.includes('Insufficient stock')
+        ? raw.split('.')[0]
+        : raw;
+      toast.error(clean);
     } finally {
       setPlacing(false);
     }
