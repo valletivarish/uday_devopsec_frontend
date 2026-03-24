@@ -4,7 +4,7 @@
  * Features a modern split-screen layout with gradient branding panel.
  */
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiLogIn, FiUser, FiLock, FiZap } from 'react-icons/fi';
 import API from '../api/axios';
@@ -164,6 +164,13 @@ const Login = () => {
               ))}
             </div>
           </div>
+
+          <p className="text-center text-sm text-slate-500 mt-6">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-emerald-600 font-medium hover:text-emerald-700">
+              Create account
+            </Link>
+          </p>
         </div>
       </div>
     </div>
