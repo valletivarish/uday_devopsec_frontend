@@ -28,7 +28,7 @@ const Login = () => {
       localStorage.setItem('opm_token', token);
       localStorage.setItem('opm_user', JSON.stringify(user));
       toast.success(`Welcome back, ${user.name}!`);
-      navigate('/dashboard');
+      navigate(user.role === 'viewer' ? '/shop' : '/dashboard');
     } catch (err) {
       const msg = err.response?.data?.message || 'Login failed. Check credentials.';
       toast.error(msg);
