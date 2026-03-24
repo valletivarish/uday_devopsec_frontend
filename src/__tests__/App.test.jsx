@@ -3,38 +3,41 @@
  *
  * Verifies that the Layout component renders the navbar, sidebar
  * navigation links, and brand text correctly when mounted inside
- * a MemoryRouter (avoiding the BrowserRouter conflict in App).
+ * a MemoryRouter. Tests both admin and viewer role layouts.
  *
  * Author: Uday Kiran Reddy Dodda (x25166484)
  */
 
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { CartProvider } from '../context/CartContext';
 
-// Render the Layout component inside a MemoryRouter
-const renderLayout = () => {
+const renderLayout = (role = 'admin') => {
+  localStorage.setItem('opm_user', JSON.stringify({ name: 'Test', email: 'test@opm.com', role }));
   return render(
-    <MemoryRouter initialEntries={['/dashboard']}>
-      <Layout />
-    </MemoryRouter>
+    <CartProvider>
+      <MemoryRouter initialEntries={[role === 'viewer' ? '/shop' : '/dashboard']}>
+        <Layout />
+      </MemoryRouter>
+    </CartProvider>
   );
 };
 
 describe('Layout Component', () => {
-  it('should render the application title in the navbar', () => {
-    renderLayout();
-
-    expect(
-      screen.getByText('Order Processing & Management')
-    ).toBeInTheDocument();
+  beforeEach(() => {
+    localStorage.clear();
   });
 
-  it('should render all sidebar navigation links', () => {
+  it('should render the application title in the navbar', () => {
     renderLayout();
+    expect(screen.getByText('Order Processing & Management')).toBeInTheDocument();
+  });
 
+  it('should render admin sidebar navigation links', () => {
+    renderLayout('admin');
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Products')).toBeInTheDocument();
     expect(screen.getByText('Customers')).toBeInTheDocument();
@@ -42,9 +45,20 @@ describe('Layout Component', () => {
     expect(screen.getByText('Inventory')).toBeInTheDocument();
   });
 
-  it('should display the OPM System brand text in the sidebar', () => {
-    renderLayout();
-
+  it('should display OPM System brand for admin', () => {
+    renderLayout('admin');
     expect(screen.getByText('OPM System')).toBeInTheDocument();
+  });
+
+  it('should render viewer storefront navigation links', () => {
+    renderLayout('viewer');
+    expect(screen.getByText('Shop')).toBeInTheDocument();
+    expect(screen.getByText('Cart')).toBeInTheDocument();
+    expect(screen.getByText('My Orders')).toBeInTheDocument();
+  });
+
+  it('should display OPM Store brand for viewer', () => {
+    renderLayout('viewer');
+    expect(screen.getByText('OPM Store')).toBeInTheDocument();
   });
 });
