@@ -1,11 +1,12 @@
 /**
- * Shop.jsx — E-commerce product catalog with card layout and add-to-cart.
- * Shown to viewer role as a storefront experience.
+ * Shop.jsx — E-commerce product catalog with stock availability,
+ * add-to-cart with inline quantity controls, and compact card layout.
+ * Fetches both products and inventory to display real stock levels.
  */
 import { useState, useEffect } from 'react';
 import API from '../api/axios';
 import { toast } from 'react-toastify';
-import { FiSearch, FiShoppingCart, FiPackage, FiStar, FiCheck } from 'react-icons/fi';
+import { FiSearch, FiShoppingCart, FiPackage, FiStar, FiPlus, FiMinus } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 
 const categoryColors = {
@@ -20,20 +21,37 @@ const categoryColors = {
 
 const Shop = () => {
   const [products, setProducts] = useState([]);
+  const [stockMap, setStockMap] = useState({});
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('ALL');
   const [loading, setLoading] = useState(true);
-  const [addedIds, setAddedIds] = useState(new Set());
-  const { addToCart, items } = useCart();
+  const { addToCart, removeFromCart, updateQuantity, items } = useCart();
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchData = async () => {
     try {
-      const res = await API.get('/products?limit=100');
-      setProducts(res.data.data || res.data);
+      const [prodRes, invRes] = await Promise.all([
+        API.get('/products?limit=100'),
+        API.get('/inventory?limit=100'),
+      ]);
+
+      const prods = prodRes.data.data || prodRes.data;
+      const inventory = invRes.data.data || invRes.data;
+
+      setProducts(prods);
+
+      // Build a map of productId -> available stock
+      const map = {};
+      for (const inv of inventory) {
+        const pid = inv.productId || inv.product?.id;
+        if (pid) {
+          map[pid] = Math.max(0, (inv.quantityInStock || 0) - (inv.quantityReserved || 0));
+        }
+      }
+      setStockMap(map);
     } catch (err) {
       toast.error('Failed to load products');
     } finally {
@@ -56,17 +74,40 @@ const Shop = () => {
     return item ? item.quantity : 0;
   };
 
+  const getStock = (productId) => {
+    return stockMap[productId] ?? null;
+  };
+
   const handleAdd = (product) => {
-    addToCart(product);
     const pid = product.id || product._id;
-    setAddedIds((prev) => new Set(prev).add(pid));
-    setTimeout(() => {
-      setAddedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(pid);
-        return next;
-      });
-    }, 1200);
+    const stock = getStock(pid);
+    const currentQty = getCartQty(pid);
+    if (stock !== null && currentQty >= stock) {
+      toast.warning('Maximum available stock reached');
+      return;
+    }
+    addToCart(product);
+  };
+
+  const handleIncrease = (product) => {
+    const pid = product.id || product._id;
+    const stock = getStock(pid);
+    const currentQty = getCartQty(pid);
+    if (stock !== null && currentQty >= stock) {
+      toast.warning('Maximum available stock reached');
+      return;
+    }
+    updateQuantity(pid, currentQty + 1);
+  };
+
+  const handleDecrease = (product) => {
+    const pid = product.id || product._id;
+    const currentQty = getCartQty(pid);
+    if (currentQty <= 1) {
+      removeFromCart(pid);
+    } else {
+      updateQuantity(pid, currentQty - 1);
+    }
   };
 
   if (loading) {
@@ -78,20 +119,20 @@ const Shop = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Hero section */}
-      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-2xl p-6 md:p-8 text-white">
-        <h1 className="text-3xl font-bold mb-2">Welcome to OPM Store</h1>
-        <p className="text-emerald-200/70 text-sm max-w-xl">
-          Browse our catalog and add items to your cart. Free shipping on orders over $500.
+      <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 rounded-xl p-5 text-white">
+        <h1 className="text-2xl font-bold mb-1">Welcome to OPM Store</h1>
+        <p className="text-emerald-200/70 text-xs max-w-xl">
+          Browse our catalog and add items to your cart. Free shipping on orders over $100.
         </p>
-        <div className="flex items-center gap-4 mt-4">
-          <div className="flex items-center gap-2 text-sm text-emerald-300/80">
-            <FiPackage size={16} />
+        <div className="flex items-center gap-4 mt-3">
+          <div className="flex items-center gap-1.5 text-xs text-emerald-300/80">
+            <FiPackage size={14} />
             <span>{products.length} Products</span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-emerald-300/80">
-            <FiStar size={16} />
+          <div className="flex items-center gap-1.5 text-xs text-emerald-300/80">
+            <FiStar size={14} />
             <span>{categories.length - 1} Categories</span>
           </div>
         </div>
@@ -100,21 +141,21 @@ const Shop = () => {
       {/* Search + Category filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
             type="text"
             placeholder="Search products..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm bg-white"
+            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm bg-white"
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-1.5 flex-wrap">
           {categories.map((c) => (
             <button
               key={c}
               onClick={() => setCategory(c)}
-              className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                 category === c
                   ? 'bg-emerald-600 text-white'
                   : 'bg-white text-slate-600 border border-slate-200 hover:border-emerald-300'
@@ -133,63 +174,94 @@ const Shop = () => {
           <p>No products found</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {filtered.map((product) => {
             const pid = product.id || product._id;
             const qty = getCartQty(pid);
-            const justAdded = addedIds.has(pid);
+            const stock = getStock(pid);
+            const isOutOfStock = stock !== null && stock <= 0;
             const gradient = categoryColors[product.category] || categoryColors.OTHER;
 
             return (
               <div
                 key={pid}
-                className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-emerald-200 transition-all duration-200 flex flex-col"
+                className={`bg-white rounded-lg border overflow-hidden flex flex-col transition-all duration-200 ${
+                  isOutOfStock
+                    ? 'border-slate-200 opacity-75'
+                    : 'border-slate-200 hover:shadow-md hover:border-emerald-200'
+                }`}
               >
-                {/* Product visual header */}
-                <div className={`bg-gradient-to-br ${gradient} p-6 flex items-center justify-center`}>
-                  <FiPackage size={40} className="text-white/80" />
+                {/* Product visual header — compact */}
+                <div className={`bg-gradient-to-br ${gradient} p-3 flex items-center justify-center relative`}>
+                  <FiPackage size={28} className="text-white/80" />
+                  {isOutOfStock && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <span className="text-white text-xs font-bold bg-red-600 px-2 py-0.5 rounded">
+                        OUT OF STOCK
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Product info */}
-                <div className="p-4 flex-1 flex flex-col">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <h3 className="font-semibold text-slate-800 leading-tight">{product.name}</h3>
-                  </div>
-                  <span className="inline-block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                    {product.category} | {product.sku}
+                {/* Product info — compact */}
+                <div className="p-3 flex-1 flex flex-col">
+                  <h3 className="font-semibold text-slate-800 text-sm leading-tight line-clamp-1">
+                    {product.name}
+                  </h3>
+                  <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 mt-0.5">
+                    {product.category}
                   </span>
-                  <p className="text-xs text-slate-500 mb-4 flex-1 line-clamp-2">{product.description}</p>
+                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 flex-1">
+                    {product.description}
+                  </p>
 
-                  <div className="flex items-end justify-between mt-auto">
-                    <div>
-                      <p className="text-2xl font-bold text-slate-800">${Number(product.price).toFixed(2)}</p>
-                    </div>
+                  {/* Stock indicator */}
+                  <div className="mt-2">
+                    {stock !== null && !isOutOfStock && (
+                      <span className={`text-[10px] font-medium ${
+                        stock <= 10 ? 'text-amber-600' : 'text-emerald-600'
+                      }`}>
+                        {stock <= 10 ? `Only ${stock} left` : `${stock} in stock`}
+                      </span>
+                    )}
+                  </div>
 
-                    <button
-                      onClick={() => handleAdd(product)}
-                      className={`relative inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                        justAdded
-                          ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
-                          : 'bg-slate-900 text-white hover:bg-emerald-700'
-                      }`}
-                    >
-                      {justAdded ? (
-                        <>
-                          <FiCheck size={16} />
-                          Added
-                        </>
-                      ) : (
-                        <>
-                          <FiShoppingCart size={16} />
-                          Add
-                        </>
-                      )}
-                      {qty > 0 && !justAdded && (
-                        <span className="absolute -top-2 -right-2 w-5 h-5 bg-emerald-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {/* Price + Cart controls */}
+                  <div className="flex items-end justify-between mt-1.5 gap-1">
+                    <p className="text-lg font-bold text-slate-800">
+                      ${Number(product.price).toFixed(2)}
+                    </p>
+
+                    {isOutOfStock ? (
+                      <span className="text-[10px] text-red-500 font-medium">Unavailable</span>
+                    ) : qty === 0 ? (
+                      <button
+                        onClick={() => handleAdd(product)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-emerald-700 transition-colors"
+                      >
+                        <FiShoppingCart size={12} />
+                        Add to Cart
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleDecrease(product)}
+                          className="w-6 h-6 flex items-center justify-center rounded border border-slate-300 hover:bg-slate-100 text-slate-600"
+                        >
+                          <FiMinus size={11} />
+                        </button>
+                        <span className="w-6 text-center text-xs font-bold text-slate-800">
                           {qty}
                         </span>
-                      )}
-                    </button>
+                        <button
+                          onClick={() => handleIncrease(product)}
+                          disabled={stock !== null && qty >= stock}
+                          className="w-6 h-6 flex items-center justify-center rounded border border-slate-300 hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <FiPlus size={11} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

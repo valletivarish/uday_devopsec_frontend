@@ -15,8 +15,8 @@ const Cart = () => {
   const { items, removeFromCart, updateQuantity, clearCart, totalPrice } = useCart();
   const [placing, setPlacing] = useState(false);
 
-  const tax = totalPrice * 0.23; // 23% Irish VAT
-  const shipping = totalPrice > 500 ? 0 : 9.99;
+  const tax = totalPrice * 0.1; // 10% tax
+  const shipping = totalPrice >= 100 ? 0 : 5.99;
   const grandTotal = totalPrice + tax + shipping;
 
   const handleCheckout = async () => {
@@ -152,7 +152,7 @@ const Cart = () => {
                 <span className="font-medium">${totalPrice.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Tax (23% VAT)</span>
+                <span>Tax (10%)</span>
                 <span className="font-medium">${tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-slate-600">
@@ -165,8 +165,8 @@ const Cart = () => {
                   )}
                 </span>
               </div>
-              {totalPrice <= 500 && (
-                <p className="text-xs text-slate-400">Free shipping on orders over $500</p>
+              {totalPrice < 100 && (
+                <p className="text-xs text-slate-400">Free shipping on orders over $100</p>
               )}
               <hr className="border-emerald-100" />
               <div className="flex justify-between text-lg font-bold text-slate-800">
