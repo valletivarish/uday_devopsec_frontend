@@ -114,7 +114,7 @@ const Layout = () => {
             <FiLogOut size={20} />
             Logout
           </button>
-          <p className="mt-2 px-3 text-[10px] text-slate-500">v1.1.0 — CI/CD Deployed</p>
+          <p className="mt-2 px-3 text-[10px] text-slate-500">v1.2.0 — DevSecOps Pipeline Active</p>
         </div>
       </aside>
 
