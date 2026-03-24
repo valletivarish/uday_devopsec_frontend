@@ -67,7 +67,7 @@ const Login = () => {
           </p>
           <div className="mt-10 flex items-center gap-3 justify-center">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-emerald-300/60 text-sm">v1.1.0 — DevSecOps Pipeline Active</span>
+            <span className="text-emerald-300/60 text-sm">Secure. Reliable. Automated.</span>
           </div>
         </div>
       </div>
