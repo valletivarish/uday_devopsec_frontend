@@ -96,7 +96,7 @@ jobs:
       - name: Build for Production
         run: npm run build
         env:
-          VITE_API_URL: http://${{ secrets.EC2_HOST }}:5000/api
+          VITE_API_URL: /api
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
