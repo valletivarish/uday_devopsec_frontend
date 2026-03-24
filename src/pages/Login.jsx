@@ -1,11 +1,13 @@
 /**
  * Login.jsx - Authentication page with demo credential quick-login buttons.
+ * Uses backend /api/auth/login for real JWT authentication.
  * Features a modern split-screen layout with gradient branding panel.
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiLogIn, FiUser, FiLock, FiZap } from 'react-icons/fi';
+import API from '../api/axios';
 
 const DEMO_USERS = [
   { email: 'admin@opm.com', password: 'admin123', role: 'Admin', color: 'from-emerald-500 to-teal-600' },
@@ -18,32 +20,31 @@ const Login = () => {
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const doLogin = async (email, password) => {
     setLoading(true);
-
-    // Simulate auth delay
-    await new Promise((r) => setTimeout(r, 600));
-
-    const valid = DEMO_USERS.find(
-      (u) => u.email === form.email && u.password === form.password
-    );
-
-    if (valid) {
-      localStorage.setItem('opm_user', JSON.stringify({ email: valid.email, role: valid.role }));
-      toast.success(`Welcome back, ${valid.role}!`);
+    try {
+      const res = await API.post('/auth/login', { email, password });
+      const { token, user } = res.data.data;
+      localStorage.setItem('opm_token', token);
+      localStorage.setItem('opm_user', JSON.stringify(user));
+      toast.success(`Welcome back, ${user.name}!`);
       navigate('/dashboard');
-    } else {
-      toast.error('Invalid credentials. Try a demo account below.');
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Login failed. Check credentials.';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    doLogin(form.email, form.password);
   };
 
   const quickLogin = (user) => {
     setForm({ email: user.email, password: user.password });
-    localStorage.setItem('opm_user', JSON.stringify({ email: user.email, role: user.role }));
-    toast.success(`Logged in as ${user.role}`);
-    navigate('/dashboard');
+    doLogin(user.email, user.password);
   };
 
   return (
@@ -66,7 +67,7 @@ const Login = () => {
           </p>
           <div className="mt-10 flex items-center gap-3 justify-center">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-emerald-300/60 text-sm">v1.0.0 — DevSecOps Pipeline Active</span>
+            <span className="text-emerald-300/60 text-sm">v1.1.0 — DevSecOps Pipeline Active</span>
           </div>
         </div>
       </div>
@@ -148,7 +149,8 @@ const Login = () => {
                 <button
                   key={user.email}
                   onClick={() => quickLogin(user)}
-                  className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-md transition-all group"
+                  disabled={loading}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-md transition-all group disabled:opacity-60"
                 >
                   <div className={`w-9 h-9 bg-gradient-to-br ${user.color} rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-sm`}>
                     {user.role[0]}

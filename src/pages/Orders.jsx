@@ -18,8 +18,10 @@ import Table from '../components/common/Table';
 import Modal from '../components/common/Modal';
 import DeleteConfirm from '../components/common/DeleteConfirm';
 import StatusBadge from '../components/common/StatusBadge';
+import { useAuth } from '../hooks/useAuth';
 
 const Orders = () => {
+  const { canCreate, canDelete } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -196,13 +198,15 @@ const Orders = () => {
           >
             <FiEye size={16} />
           </button>
-          <button
-            onClick={() => setDeleteTarget(row)}
-            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-            title="Delete order"
-          >
-            <FiTrash2 size={16} />
-          </button>
+          {canDelete && (
+            <button
+              onClick={() => setDeleteTarget(row)}
+              className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+              title="Delete order"
+            >
+              <FiTrash2 size={16} />
+            </button>
+          )}
         </div>
       ),
     },
@@ -224,13 +228,15 @@ const Orders = () => {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold text-slate-800">Orders</h1>
-        <button
-          onClick={() => setModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-colors text-sm font-medium"
-        >
-          <FiPlus size={18} />
-          Create Order
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-colors text-sm font-medium"
+          >
+            <FiPlus size={18} />
+            Create Order
+          </button>
+        )}
       </div>
 
       {/* Search and status filter row */}

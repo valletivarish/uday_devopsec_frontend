@@ -10,8 +10,10 @@ import { FiPlus, FiEdit2, FiTrash2, FiSearch } from 'react-icons/fi';
 import Table from '../components/common/Table';
 import Modal from '../components/common/Modal';
 import DeleteConfirm from '../components/common/DeleteConfirm';
+import { useAuth } from '../hooks/useAuth';
 
 const Customers = () => {
+  const { canCreate, canEdit, canDelete } = useAuth();
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -150,20 +152,24 @@ const Customers = () => {
       label: 'Actions',
       render: (row) => (
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleEdit(row)}
-            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
-            title="Edit customer"
-          >
-            <FiEdit2 size={16} />
-          </button>
-          <button
-            onClick={() => setDeleteTarget(row)}
-            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-            title="Delete customer"
-          >
-            <FiTrash2 size={16} />
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => handleEdit(row)}
+              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+              title="Edit customer"
+            >
+              <FiEdit2 size={16} />
+            </button>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => setDeleteTarget(row)}
+              className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+              title="Delete customer"
+            >
+              <FiTrash2 size={16} />
+            </button>
+          )}
         </div>
       ),
     },
@@ -182,13 +188,15 @@ const Customers = () => {
       {/* Page header with title and create button */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold text-slate-800">Customers</h1>
-        <button
-          onClick={handleCreate}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-colors text-sm font-medium"
-        >
-          <FiPlus size={18} />
-          Add Customer
-        </button>
+        {canCreate && (
+          <button
+            onClick={handleCreate}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-colors text-sm font-medium"
+          >
+            <FiPlus size={18} />
+            Add Customer
+          </button>
+        )}
       </div>
 
       {/* Search bar */}
