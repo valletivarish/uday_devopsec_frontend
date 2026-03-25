@@ -129,7 +129,9 @@ const Orders = () => {
       setOrderItems([{ productId: '', quantity: 1 }]);
       fetchData();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to create order');
+      const raw = err.response?.data?.message || 'Failed to create order';
+      const clean = raw.startsWith('Insufficient stock') ? 'Insufficient stock for this item' : raw;
+      toast.error(clean);
     }
   };
 
