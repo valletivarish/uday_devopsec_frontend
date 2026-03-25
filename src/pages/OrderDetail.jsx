@@ -281,14 +281,14 @@ const OrderDetail = () => {
             </div>
           )}
 
-          {/* Action buttons card - only for admin/manager, not viewer */}
-          {!isViewer && !isCancelled && order.status !== 'DELIVERED' && (
+          {/* Action buttons card */}
+          {!isCancelled && order.status !== 'DELIVERED' && (
             <div className="bg-white rounded-lg shadow-sm border border-emerald-100 p-5">
               <h2 className="text-lg font-semibold text-slate-800 mb-4">
                 Actions
               </h2>
               <div className="space-y-2">
-                {/* Process Payment button - available when order is PLACED */}
+                {/* Process Payment - viewer and admin/manager can pay a PLACED order */}
                 {order.status === 'PLACED' && (
                   <button
                     onClick={() =>
@@ -301,8 +301,8 @@ const OrderDetail = () => {
                   </button>
                 )}
 
-                {/* Ship button - available when order is PAID */}
-                {order.status === 'PAID' && (
+                {/* Ship button - admin/manager only */}
+                {!isViewer && order.status === 'PAID' && (
                   <button
                     onClick={() => handleAction('ship', 'Shipped')}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
@@ -312,8 +312,8 @@ const OrderDetail = () => {
                   </button>
                 )}
 
-                {/* Deliver button - available when order is SHIPPED */}
-                {order.status === 'SHIPPED' && (
+                {/* Deliver button - admin/manager only */}
+                {!isViewer && order.status === 'SHIPPED' && (
                   <button
                     onClick={() => handleAction('deliver', 'Delivered')}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
@@ -323,14 +323,16 @@ const OrderDetail = () => {
                   </button>
                 )}
 
-                {/* Cancel button - available at any non-terminal state */}
-                <button
-                  onClick={() => handleAction('cancel', 'Cancelled')}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
-                >
-                  <FiXCircle size={16} />
-                  Cancel Order
-                </button>
+                {/* Cancel button - viewer can cancel PLACED orders; admin/manager can cancel any */}
+                {(!isViewer || order.status === 'PLACED') && (
+                  <button
+                    onClick={() => handleAction('cancel', 'Cancelled')}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                  >
+                    <FiXCircle size={16} />
+                    Cancel Order
+                  </button>
+                )}
               </div>
             </div>
           )}
