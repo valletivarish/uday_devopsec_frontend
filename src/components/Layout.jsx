@@ -129,7 +129,7 @@ const Layout = () => {
             <FiLogOut size={20} />
             Logout
           </button>
-          <p className="mt-2 px-3 text-[10px] text-slate-500">v1.3.0 — DevSecOps Pipeline Active</p>
+
         </div>
       </aside>
 
